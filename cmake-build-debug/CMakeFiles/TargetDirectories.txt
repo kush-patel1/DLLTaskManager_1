@@ -1,0 +1,3 @@
+/Users/kushpatel/Desktop/CISC220/DLLTaskManager-1/cmake-build-debug/CMakeFiles/DLLTaskManager_1.dir
+/Users/kushpatel/Desktop/CISC220/DLLTaskManager-1/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/kushpatel/Desktop/CISC220/DLLTaskManager-1/cmake-build-debug/CMakeFiles/rebuild_cache.dir
