@@ -24,7 +24,7 @@ TaskManager::TaskManager(string s) {
 
 void TaskManager::interface() {
 	int choice=-1;
-	while (choice != 9) {
+	while (choice != 0) {
 		cout << "What do you want to do?" <<endl<< flush;
 		cout <<"Enter:" << endl<< flush;
 		cout <<"\t1 for adding a task"<<endl << flush;

@@ -1,3 +1,4 @@
+//Kush and Taha
 
 #ifndef DLL_HPP_
 #define DLL_HPP_
@@ -24,7 +25,7 @@ public:
 	// 1 and the first task with a priority of 2
 	// it also updates the total time of the list
 	Task *pop();  // removes the last task from the list - make sure to update the total time of the list
-	int remove(int tasknum); // removes a task (based on its number) and updates the total time of the list.
+	int remove(int tasknum); // removes a task (base2d on its number) and updates the total time of the list.
 						// Returns the task number if it was found, or -1 otherwise.
 	void moveUp(int tasknum); // moves task with number tn up one in the list.
 						// If it is at the beginning of the list,
