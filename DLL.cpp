@@ -6,29 +6,19 @@ using namespace std;
 
 
 DLL::DLL(){
-	first = nullptr;
-    last = nullptr;
+    first = NULL;
+    last = NULL;
     numTasks = 0;
     tothrs = 0;
     totmin = 0;
 }
 
 DLL::DLL(string taskname, int priority, int hours, int mins){
-    if(first == nullptr){
-        first = new DNode(taskname, priority, hours, mins);
-        last = first;
-        numTasks = 1;
-        addTime(hours,mins);
-    }
-    else{
-        DNode *newNode = new DNode(taskname, priority, hours, mins);
-        last->next = newNode;
-        newNode->prev = last;
-        last = newNode;
-        numTasks++;
-        addTime(hours,mins);
-    }
-
+    DNode *newNode = new DNode (taskname,priority,hours,mins);
+    first = newNode;
+    last = newNode;
+    numTasks = 1;
+    addTime(hours, mins);
 }
 
 DLL::~DLL(){
@@ -48,7 +38,7 @@ DLL::~DLL(){
 void DLL::push(string taskname, int priority, int hours, int mins) {
     DNode *newNode = new DNode(taskname, priority, hours, mins);
 
-    if (first == nullptr) {
+    if (first == nullptr && last == nullptr) {
         first = newNode;
         last = first;
     }
@@ -117,18 +107,17 @@ Task *DLL::pop() {
     DNode *current = last;
     DNode *temp = current->prev;
     if (first != nullptr && last != nullptr) {
-        Task *popped = current->task;
+        Task *popped = new Task(*current->task);
         if (first != last) {
-            last = temp;
-            last->next = nullptr;
+            remove(current->task->tasknum);
         }
         else {
             first = nullptr;
             last = nullptr;
+            numTasks--;
+            removeTime(current->task->hr, current->task->min);
+            cout << "deleting node with task " << popped->tasknum << endl;
         }
-        numTasks--;
-        removeTime(current->task->hr, current->task->min);
-        cout << "deleting node with task " << popped->tasknum << endl;
         return popped;
     }
     else{
@@ -168,15 +157,18 @@ int DLL::remove(int tasknum) {
 }
 
 void DLL::addTime(int hours, int mins) {
-	tothrs += hours;
+    tothrs += hours;
     totmin += mins;
 
-    tothrs += totmin / 60;
-    totmin %= 60;
+    if(totmin >= 60){
+        tothrs += totmin / 60;
+        totmin %= 60;
+    }
+
 }
 
 void DLL::removeTime(int hours, int mins) {
-	tothrs -= hours;
+    tothrs -= hours;
     totmin -= mins;
     if (totmin < 0){
         tothrs -= 1;
@@ -194,12 +186,26 @@ void DLL::moveUp(int tasknum) {
         return;
     }
 
-    if (current == first) {
+    if(current->next == nullptr){
+        last = current->prev;
+        current->next = current->prev;
+        current->prev->next = nullptr;
+
+        current->prev->prev->next = current;
+        current->prev = current->prev->prev;
+        current->next->prev = current;
+
+        if (current->prev != nullptr && current->next->task->priority > current->task->priority) {
+            current->task->priority = current->next->task->priority;
+        }
+    }
+    //move to bottom of list
+    else if (current->prev == nullptr) {
         first = current->next;
         first->prev = nullptr;
 
-        last->next = current;
         current->prev = last;
+        last->next = current;
         current->next = nullptr;
         last = current;
 
@@ -207,10 +213,11 @@ void DLL::moveUp(int tasknum) {
             current->task->priority = current->prev->task->priority;
         }
     }
+
     else {
         //to make it less confusing
         DNode *prevNode = current->prev;
-        DNode *prevPrevNode = prevNode->prev;
+        DNode *prevPrevNode = current->prev->prev;
 
         prevNode->next = current->next;
         if (current->next != nullptr) {
@@ -245,21 +252,50 @@ void DLL::moveDown(int tasknum) {
         return;
     }
 
-    if (current == last) {
-        last = current->prev;
+    if(current->next == nullptr)
+    {
+        current = last;
+        last = last->prev;
         last->next = nullptr;
-
-        first->prev = current;
         current->prev = nullptr;
+        //move to the first node
         current->next = first;
+        first->prev = current;
         first = current;
 
-        if (current->prev == nullptr && current->next->task->priority < current->task->priority) {
-            current->task->priority = current->next->task->priority;
+        if (first->next != nullptr && first->next->task->priority < first->task->priority) {
+            first->task->priority = first->next->task->priority;
         }
     }
-    else {
-        //to make it less confusing
+    else if(current->prev == nullptr)
+    {
+        //re-allocate the first pointer
+        DNode *nextNextNode = current->next->next;
+        first = current->next;
+        current->prev = current->next;
+        current->next->prev = nullptr;
+
+        nextNextNode->prev = current;
+        current->next = nextNextNode;
+        current->prev->next = current;
+
+
+        if (current->prev != nullptr && current->prev->task->priority > current->task->priority) {
+            current->task->priority = current->next->task->priority;
+        }
+
+    }
+    else if(current->next->next == nullptr){
+        current->prev->next = current->next;
+        current->next->prev = current->prev;
+
+        last->next = current;
+        current->prev = last;
+        current->next = nullptr;
+        last = current;
+    }
+    else
+    {
         DNode *nextNode = current->next;
         DNode *nextNextNode = nextNode->next;
 
@@ -286,58 +322,77 @@ void DLL::moveDown(int tasknum) {
 }
 
 void DLL::changePriority(int tasknum, int newPriority) {
-	DNode *current = first;
+    DNode *current = first;
     while((current->task->tasknum != tasknum) && (current != nullptr)){
         current = current->next;
     }
-    if (current != nullptr) {
-        if(current->task->priority == newPriority){
-            while (current->task->priority == current->next->task->priority) {
-                moveDown(current->task->tasknum);
-            }
+    if(current->task->priority == newPriority){
+        if(newPriority == 3 && current->next == nullptr){
             return;
         }
-        current->task->priority = newPriority;
-
-        while (current->next != nullptr && current->task->priority > current->next->task->priority) {
+        while (current->task->priority == current->next->task->priority) {
             moveDown(current->task->tasknum);
         }
-
-        while (current->prev != nullptr && current->task->priority < current->prev->task->priority) {
+    }
+    else if(current->task->priority > newPriority){
+        while(current->prev->task->priority != newPriority){
             moveUp(current->task->tasknum);
         }
+        current->task->priority = newPriority;
+    }
+    else if(current->task->priority < newPriority){
+        current->task->priority = newPriority;
+        if(newPriority == 3){
+            while(current->next != nullptr){
+                moveDown(current->task->tasknum);
+            }
+        }
+        else{
+            while(current->next->task->priority != newPriority + 1){
+                moveDown(current->task->tasknum);
+            }
+        }
+
     }
 }
 
 void DLL::listDuration(int *pHours, int *pMins,int priority) {
     DNode *current = first;
-    while(current != first){
+    while(current != nullptr){
         if (current->task->priority == priority){
-            pHours += current->task->hr;
-            pMins += current->task->min;
+            *pHours += current->task->hr;
+            *pMins += current->task->min;
         }
         current = current->next;
     }
+    *pHours += *pMins / 60;
+    *pMins = *pMins % 60;
 }
 
 void DLL::printList() {
-	DNode *current = first;
-	cout << "Total Time Required: "<<tothrs<< ":"<<totmin<<endl;
-	while (current != nullptr) {
-		current->task->printTask();
-		current = current->next;
-	}
-	cout << endl;
+    DNode *current = first;
+    cout << "Total Time Required: "<<tothrs<< ":"<<totmin<<endl;
+    while (current != nullptr) {
+        current->task->printTask();
+        current = current->next;
+    }
+    cout << endl;
 }
 
 void DLL::printList(int priority) {
-	DNode *current = first;
+    int hours = 0;
+    int minutes = 0;
+    listDuration(&hours, &minutes,priority);
+    cout << "Total Time Required: "<<hours<< ":"<<minutes<<endl;
+    DNode *current = first;
     while (current != nullptr) {
         if (current->task->priority == priority) {
             current->task->printTask();
         }
         current = current->next;
     }
+    cout << endl;
+
 }
 
 void DLL::printReverse() {
